@@ -1,0 +1,61 @@
+/* ===================================== */
+/* Marquee Animation System */
+/* ===================================== */
+
+:root {
+  --marquee-gap: 2rem;
+  --marquee-duration: 20s;
+}
+
+/* Container */
+.marquee {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+}
+
+/* Track that moves */
+.marquee__track {
+  display: flex;
+  gap: var(--marquee-gap);
+  width: max-content;
+  animation: marquee-horizontal var(--marquee-duration) linear infinite;
+  will-change: transform;
+}
+
+/* Pause on hover (optional but premium feel) */
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+
+/* Seamless horizontal loop */
+@keyframes marquee-horizontal {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - var(--marquee-gap)));
+  }
+}
+
+/* Optional: fade edges like premium SaaS sites */
+.marquee::before,
+.marquee::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 80px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marquee::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.6), transparent);
+}
+
+.marquee::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0,0,0,0.6), transparent);
+}
