@@ -4,9 +4,9 @@ import { Clock, Instagram, Mail, MapPin, Phone } from "lucide-react";
 
 const QUICK_LINKS = [
   { label: "Menu", href: "/menu" },
-  { label: "Top sellers", href: "/" }, // later: use "#top-sellers" if you add anchors
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
+  { label: "Cart", href: "/cart" },
 ];
 
 const LEGAL_LINKS = [
@@ -17,14 +17,25 @@ const LEGAL_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="mt-0 bg-black text-white">
-      {/* top glow */}
-      <div className="relative">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-24 h-24 bg-gradient-to-t from-black to-transparent"
-        />
-      </div>
+    <footer className="relative border-t border-border bg-background text-foreground">
+      {/* subtle background pattern (same vibe as your sections) */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 opacity-35 dark:opacity-20
+        bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.10)_1px,transparent_0)]
+        dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.16)_1px,transparent_0)]
+        [background-size:18px_18px]"
+      />
+
+      {/* soft “gutter glow” so it doesn’t feel empty on large screens */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-56 top-12 -z-10 h-[420px] w-[420px] rounded-full bg-lime-300/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-56 bottom-8 -z-10 h-[420px] w-[420px] rounded-full bg-amber-300/10 blur-3xl"
+      />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-14">
         <div className="grid gap-10 md:grid-cols-12">
@@ -34,12 +45,14 @@ export function Footer() {
               <span className="text-xl font-semibold tracking-tight">
                 CookieShop
               </span>
+
+              {/* Accent pill (swap to bg-primary if you want pure theme colors) */}
               <span className="rounded-full bg-lime-300 px-2 py-0.5 text-xs font-semibold text-black">
                 fresh
               </span>
             </Link>
 
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/70">
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
               Warm cookies, baked in small batches with premium ingredients.
               Pickup or delivery — your next favorite bite is a few clicks away.
             </p>
@@ -48,22 +61,22 @@ export function Footer() {
             <div className="mt-6 flex items-center gap-3">
               <a
                 href="#"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground/80 transition hover:bg-accent hover:text-foreground"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
               </a>
+
               <a
                 href="mailto:hello@cookieshop.com"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground/80 transition hover:bg-accent hover:text-foreground"
                 aria-label="Email"
               >
                 <Mail className="h-5 w-5" />
               </a>
             </div>
 
-            {/* tiny note */}
-            <p className="mt-6 text-xs text-white/50">
+            <p className="mt-6 text-xs text-muted-foreground">
               Replace the brand name, socials, and contact info with yours.
             </p>
           </div>
@@ -76,7 +89,7 @@ export function Footer() {
                 <li key={l.label}>
                   <Link
                     href={l.href}
-                    className="text-sm text-white/70 transition hover:text-lime-300"
+                    className="text-sm text-muted-foreground transition hover:text-foreground"
                   >
                     {l.label}
                   </Link>
@@ -85,36 +98,42 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Info */}
+          {/* Info cards */}
           <div className="md:col-span-4">
             <h3 className="text-sm font-semibold">Info</h3>
 
             <div className="mt-4 space-y-4">
-              <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                <MapPin className="mt-0.5 h-5 w-5 text-lime-300" />
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-lime-300/20 text-lime-700 dark:text-lime-300">
+                  <MapPin className="h-5 w-5" />
+                </span>
                 <div>
                   <p className="text-sm font-medium">Pickup location</p>
-                  <p className="text-sm text-white/70">
+                  <p className="text-sm text-muted-foreground">
                     Your City, Your Street (update this)
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                <Clock className="mt-0.5 h-5 w-5 text-lime-300" />
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-lime-300/20 text-lime-700 dark:text-lime-300">
+                  <Clock className="h-5 w-5" />
+                </span>
                 <div>
                   <p className="text-sm font-medium">Hours</p>
-                  <p className="text-sm text-white/70">
+                  <p className="text-sm text-muted-foreground">
                     Mon–Sat: 10:00–20:00 • Sun: 12:00–18:00
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                <Phone className="mt-0.5 h-5 w-5 text-lime-300" />
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-lime-300/20 text-lime-700 dark:text-lime-300">
+                  <Phone className="h-5 w-5" />
+                </span>
                 <div>
                   <p className="text-sm font-medium">Contact</p>
-                  <p className="text-sm text-white/70">
+                  <p className="text-sm text-muted-foreground">
                     +00 000 000 000 • hello@cookieshop.com
                   </p>
                 </div>
@@ -124,8 +143,8 @@ export function Footer() {
         </div>
 
         {/* bottom bar */}
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
-          <p className="text-xs text-white/50">
+        <div className="mt-12 flex flex-col gap-4 border-t border-border pt-6 md:flex-row md:items-center md:justify-between">
+          <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} CookieShop. All rights reserved.
           </p>
 
@@ -134,7 +153,7 @@ export function Footer() {
               <Link
                 key={l.label}
                 href={l.href}
-                className="text-xs text-white/50 transition hover:text-white"
+                className="text-xs text-muted-foreground transition hover:text-foreground"
               >
                 {l.label}
               </Link>
