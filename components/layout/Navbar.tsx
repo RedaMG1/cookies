@@ -15,6 +15,9 @@ export function Navbar() {
 
         {/* Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm text-white/80">
+        <Link href="/" className="hover:text-white transition">
+            Home
+          </Link>
           <Link href="/menu" className="hover:text-white transition">
             Menu
           </Link>
