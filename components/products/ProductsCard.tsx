@@ -16,7 +16,7 @@ export function ProductCard({
   imageUrl: string;
   fromPrice: string;
   href: string;
-  tags: string[];
+  tags?: string[];
   featured?: boolean;
 }) {
   return (
@@ -35,7 +35,7 @@ export function ProductCard({
             </span>
           ) : null}
 
-          {tags.slice(0, 2).map((t) => (
+          {(tags ?? []).slice(0, 2).map((t) => (
             <span
               key={t}
               className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur"
