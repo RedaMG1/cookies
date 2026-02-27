@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ShoppingCart, LogOut, User } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useCart } from "@/components/cart/CartProvider";
 
 export function Navbar() {
   const supabase = createSupabaseBrowserClient();
+  const { totalItems } = useCart();
+
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,12 +56,18 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {/* Cart with badge */}
           <Link
             href="/cart"
-            className="flex items-center gap-2 bg-lime-300 text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-lime-200 transition"
+            className="relative flex items-center gap-2 bg-lime-300 text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-lime-200 transition"
           >
             <ShoppingCart className="h-4 w-4" />
             Cart
+            {totalItems > 0 ? (
+              <span className="absolute -top-2 -right-2 h-6 min-w-[24px] px-1 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">
+                {totalItems}
+              </span>
+            ) : null}
           </Link>
 
           {email ? (

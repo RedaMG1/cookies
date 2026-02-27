@@ -1,5 +1,5 @@
 // lib/products.supabase.ts
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 
 export type SupabaseProduct = {
   id: string;
@@ -9,7 +9,14 @@ export type SupabaseProduct = {
   featured: boolean;
   status: "draft" | "active" | "archived";
   product_images: { path: string; is_primary: boolean; sort_order: number }[];
-  product_variants: { price_cents: number; name: string; active: boolean; sort_order: number }[];
+  product_variants: {
+    id: string;
+    name: string;
+    sku: string | null;
+    price_cents: number;
+    active: boolean;
+    sort_order: number;
+  }[];
 };
 
 export async function fetchProductsFromSupabase() {
@@ -24,7 +31,7 @@ export async function fetchProductsFromSupabase() {
       featured,
       status,
       product_images ( path, is_primary, sort_order ),
-      product_variants ( price_cents, name, active, sort_order )
+      product_variants ( id, name, sku, price_cents, active, sort_order )
     `
     )
     .eq("status", "active")
@@ -49,9 +56,13 @@ export function getPrimaryImage(images: SupabaseProduct["product_images"]) {
 export function getFromPriceCents(variants: SupabaseProduct["product_variants"]) {
   const active = (variants ?? []).filter((v) => v.active);
   if (active.length === 0) return 0;
-  return active
-    .map((v) => v.price_cents)
-    .reduce((min, val) => Math.min(min, val), active[0].price_cents);
+  return active.reduce((min, v) => (v.price_cents < min ? v.price_cents : min), active[0].price_cents);
+}
+
+export function getCheapestVariant(variants: SupabaseProduct["product_variants"]) {
+  const active = (variants ?? []).filter((v) => v.active);
+  if (active.length === 0) return null;
+  return active.reduce((min, v) => (v.price_cents < min.price_cents ? v : min), active[0]);
 }
 
 export function formatMoney(cents: number, currency = "USD") {

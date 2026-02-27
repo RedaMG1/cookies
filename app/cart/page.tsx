@@ -9,7 +9,7 @@ export default function CartPage() {
 
   return (
     <main className="relative overflow-hidden">
-      {/* Warm bakery background */}
+      {/* warm bakery background */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10
@@ -57,11 +57,10 @@ export default function CartPage() {
           </div>
         ) : (
           <div className="mt-10 grid gap-6 lg:grid-cols-12">
-            {/* items */}
             <div className="lg:col-span-8 space-y-4">
               {items.map((it) => (
                 <div
-                  key={it.id}
+                  key={it.variantId}
                   className="flex gap-4 rounded-3xl border border-border bg-card p-4"
                 >
                   <div
@@ -71,14 +70,14 @@ export default function CartPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-semibold">{it.name}</p>
+                        <p className="font-semibold">{it.productName}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatMoney(it.unitPriceCents)} each
                         </p>
                       </div>
 
                       <button
-                        onClick={() => removeItem(it.id)}
+                        onClick={() => removeItem(it.variantId)}
                         className="text-sm text-muted-foreground hover:text-foreground"
                       >
                         Remove
@@ -89,14 +88,14 @@ export default function CartPage() {
                       <div className="inline-flex items-center rounded-xl border border-border bg-background">
                         <button
                           className="px-3 py-2 text-sm"
-                          onClick={() => setQuantity(it.id, it.quantity - 1)}
+                          onClick={() => setQuantity(it.variantId, it.quantity - 1)}
                         >
                           -
                         </button>
                         <span className="w-10 text-center text-sm">{it.quantity}</span>
                         <button
                           className="px-3 py-2 text-sm"
-                          onClick={() => setQuantity(it.id, it.quantity + 1)}
+                          onClick={() => setQuantity(it.variantId, it.quantity + 1)}
                         >
                           +
                         </button>
@@ -111,7 +110,6 @@ export default function CartPage() {
               ))}
             </div>
 
-            {/* summary */}
             <div className="lg:col-span-4">
               <div className="rounded-3xl border border-border bg-card p-6 sticky top-24">
                 <p className="text-lg font-semibold">Summary</p>
@@ -119,11 +117,6 @@ export default function CartPage() {
                 <div className="mt-4 flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{formatMoney(subtotalCents)}</span>
-                </div>
-
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Delivery</span>
-                  <span className="font-medium">Calculated at checkout</span>
                 </div>
 
                 <div className="mt-4 border-t border-border pt-4 flex items-center justify-between">

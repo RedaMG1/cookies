@@ -7,10 +7,10 @@ import { ArrowRight, Cookie } from "lucide-react";
 
 import {
   fetchProductsFromSupabase,
-  formatMoney,
-  getFromPriceCents,
+  getCheapestVariant,
   getPrimaryImage,
   SupabaseProduct,
+  formatMoney,
 } from "@/lib/products.supabase";
 
 import { useCart } from "@/components/cart/CartProvider";
@@ -31,9 +31,7 @@ export function CookiesShowcase() {
         setError(null);
 
         const data = await fetchProductsFromSupabase();
-        const six = data.slice(0, 6);
-
-        if (mounted) setItems(six);
+        if (mounted) setItems(data.slice(0, 6));
       } catch (e: any) {
         if (mounted) setError(e?.message ?? "Failed to load cookies");
       } finally {
@@ -120,9 +118,11 @@ export function CookiesShowcase() {
                 />
               ))
             : items.map((p) => {
+                const cheapest = getCheapestVariant(p.product_variants);
+                if (!cheapest) return null;
+
                 const imageUrl = getPrimaryImage(p.product_images);
-                const fromCents = getFromPriceCents(p.product_variants);
-                const fromPrice = formatMoney(fromCents);
+                const fromPrice = formatMoney(cheapest.price_cents);
 
                 return (
                   <article
@@ -165,34 +165,45 @@ export function CookiesShowcase() {
                           View details
                         </Link>
 
+                        {/* ✅ Add to cart + Order now */}
                         <div className="flex items-center gap-2">
-                          {/* ✅ Add to cart */}
                           <button
-                            onClick={() =>
+                            onClick={() => {
                               addItem(
                                 {
-                                  id: p.id,
-                                  name: p.name,
-                                  slug: p.slug,
+                                  variantId: cheapest.id,
+                                  productName: p.name,
+                                  productSlug: p.slug,
                                   imageUrl,
-                                  unitPriceCents: fromCents,
+                                  unitPriceCents: cheapest.price_cents,
                                 },
                                 1
-                              )
-                            }
+                              );
+                            }}
                             className="rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-black shadow-sm transition hover:bg-black/5
                                        dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                           >
                             Add to cart
                           </button>
 
-                          {/* ✅ Order = go to cart */}
-                          <Link
-                            href="/cart"
+                          <button
+                            onClick={() => {
+                              addItem(
+                                {
+                                  variantId: cheapest.id,
+                                  productName: p.name,
+                                  productSlug: p.slug,
+                                  imageUrl,
+                                  unitPriceCents: cheapest.price_cents,
+                                },
+                                1
+                              );
+                              window.location.href = "/cart";
+                            }}
                             className="rounded-md bg-lime-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-200"
                           >
                             Order now
-                          </Link>
+                          </button>
                         </div>
                       </div>
                     </div>

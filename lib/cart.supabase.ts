@@ -29,11 +29,7 @@ export async function getOrCreateActiveCartId(userId: string) {
 }
 
 export async function replaceCartItems(cartId: string, items: DbCartItem[]) {
-  const { error: delErr } = await supabase
-    .from("cart_items")
-    .delete()
-    .eq("cart_id", cartId);
-
+  const { error: delErr } = await supabase.from("cart_items").delete().eq("cart_id", cartId);
   if (delErr) throw new Error(delErr.message);
 
   if (items.length === 0) return;
