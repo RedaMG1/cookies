@@ -13,7 +13,11 @@ import {
   SupabaseProduct,
 } from "@/lib/products.supabase";
 
+import { useCart } from "@/components/cart/CartProvider";
+
 export function CookiesShowcase() {
+  const { addItem } = useCart();
+
   const [items, setItems] = useState<SupabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +30,6 @@ export function CookiesShowcase() {
         setLoading(true);
         setError(null);
 
-        // Fetch all active products, then pick 6
-        // (we sort featured first in fetchProductsFromSupabase)
         const data = await fetchProductsFromSupabase();
         const six = data.slice(0, 6);
 
@@ -46,9 +48,7 @@ export function CookiesShowcase() {
 
   return (
     <section className="relative overflow-hidden py-16 md:py-20">
-      {/* ------------------------------ */}
-      {/* Warm bakery background (FULL)  */}
-      {/* ------------------------------ */}
+      {/* Warm bakery background */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10
@@ -139,14 +139,12 @@ export function CookiesShowcase() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-                      {/* Featured tag */}
                       {p.featured ? (
                         <div className="absolute left-4 top-4 rounded-full bg-lime-300 px-3 py-1 text-xs font-semibold text-black">
                           Featured
                         </div>
                       ) : null}
 
-                      {/* price pill */}
                       <div className="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
                         from {fromPrice}
                       </div>
@@ -159,7 +157,7 @@ export function CookiesShowcase() {
                         {p.description ?? "Fresh baked goodness."}
                       </p>
 
-                      <div className="mt-5 flex items-center justify-between">
+                      <div className="mt-5 flex items-center justify-between gap-3">
                         <Link
                           href={`/menu/${p.slug}`}
                           className="text-sm font-medium text-black/80 hover:text-black dark:text-white/80 dark:hover:text-white"
@@ -167,12 +165,35 @@ export function CookiesShowcase() {
                           View details
                         </Link>
 
-                        <Link
-                          href="/menu"
-                          className="rounded-md bg-lime-300 px-4 py-2 text-sm font-medium text-black transition hover:bg-lime-200"
-                        >
-                          Order
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          {/* ✅ Add to cart */}
+                          <button
+                            onClick={() =>
+                              addItem(
+                                {
+                                  id: p.id,
+                                  name: p.name,
+                                  slug: p.slug,
+                                  imageUrl,
+                                  unitPriceCents: fromCents,
+                                },
+                                1
+                              )
+                            }
+                            className="rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-black shadow-sm transition hover:bg-black/5
+                                       dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                          >
+                            Add to cart
+                          </button>
+
+                          {/* ✅ Order = go to cart */}
+                          <Link
+                            href="/cart"
+                            className="rounded-md bg-lime-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-200"
+                          >
+                            Order now
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </article>

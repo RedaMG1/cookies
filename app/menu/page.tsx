@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/products/ProductsCard";
 import {
   fetchProductsFromSupabase,
-  formatMoney,
   getFromPriceCents,
   getPrimaryImage,
   SupabaseProduct,
@@ -18,7 +17,6 @@ export default function MenuPage() {
 
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
         setLoading(true);
@@ -30,7 +28,6 @@ export default function MenuPage() {
         if (mounted) setLoading(false);
       }
     })();
-
     return () => {
       mounted = false;
     };
@@ -38,7 +35,7 @@ export default function MenuPage() {
 
   return (
     <main className="relative overflow-hidden">
-      {/* Warm bakery background */}
+      {/* warm bakery background */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10
@@ -53,14 +50,6 @@ export default function MenuPage() {
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-56 top-10 -z-10 h-[520px] w-[520px] rounded-full bg-amber-400/25 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-56 bottom-8 -z-10 h-[520px] w-[520px] rounded-full bg-orange-400/20 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
         className="absolute inset-0 -z-10 opacity-[0.06]
         [background-image:radial-gradient(#000_1px,transparent_0)]
         [background-size:22px_22px]"
@@ -71,7 +60,7 @@ export default function MenuPage() {
           <div>
             <h1 className="text-4xl font-semibold tracking-tight">Menu</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Explore our cookies. Pick your favorite, choose a box size, and order.
+              Explore our cookies. Add your favorites to the cart.
             </p>
           </div>
 
@@ -98,11 +87,12 @@ export default function MenuPage() {
             : products.map((p) => (
                 <ProductCard
                   key={p.id}
+                  id={p.id}
                   name={p.name}
+                  slug={p.slug}
                   description={p.description ?? "Fresh baked goodness."}
                   imageUrl={getPrimaryImage(p.product_images)}
-                  fromPrice={formatMoney(getFromPriceCents(p.product_variants))}
-                  href={`/menu/${p.slug}`} // details page later
+                  fromPriceCents={getFromPriceCents(p.product_variants)}
                   featured={p.featured}
                 />
               ))}
