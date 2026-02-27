@@ -26,6 +26,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           password,
         });
         if (error) throw error;
+
+        // ✅ clear guest cart after login (optional)
+        localStorage.removeItem("cookie_shop_cart_v2");
+
         setMessage("Logged in ✅");
         window.location.href = "/";
       } else {
@@ -35,8 +39,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         });
         if (error) throw error;
 
-        // Depending on your Supabase email confirmation settings,
-        // the user might need to confirm via email.
+        // ✅ clear guest cart after signup (optional)
+        localStorage.removeItem("cookie_shop_cart_v2");
+
         setMessage(
           "Account created ✅ If email confirmation is enabled, check your inbox."
         );
