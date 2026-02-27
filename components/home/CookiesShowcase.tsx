@@ -1,79 +1,52 @@
 // components/home/CookiesShowcase.tsx
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ArrowRight, Cookie } from "lucide-react";
 
-type CookieItem = {
-  name: string;
-  note: string;
-  price: string;
-  tags: string[];
-  imageUrl: string;
-  href: string;
-};
+import {
+  fetchProductsFromSupabase,
+  getCheapestVariant,
+  getPrimaryImage,
+  SupabaseProduct,
+  formatMoney,
+} from "@/lib/products.supabase";
 
-const COOKIES: CookieItem[] = [
-  {
-    name: "Chocolate Chunk",
-    note: "Gooey center, crispy edge, real chocolate chunks.",
-    price: "$3.50",
-    tags: ["Classic", "Best seller"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=1800&q=80",
-    href: "/menu",
-  },
-  {
-    name: "Red Velvet Cream",
-    note: "Soft red velvet with a creamy middle.",
-    price: "$3.80",
-    tags: ["Soft", "Creamy"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=1800&q=80",
-    href: "/menu",
-  },
-  {
-    name: "Peanut Butter Melt",
-    note: "Nutty, rich, melt-in-your-mouth bite.",
-    price: "$3.60",
-    tags: ["Nutty", "Fan favorite"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1509440159598-8b9f6937f2a6?auto=format&fit=crop&w=1800&q=80",
-    href: "/menu",
-  },
-  {
-    name: "Double Chocolate",
-    note: "Cocoa dough + chocolate chips. Deep & fudgy.",
-    price: "$3.70",
-    tags: ["Chocolate", "Fudgy"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=1800&q=80",
-    href: "/menu",
-  },
-  {
-    name: "Oatmeal Raisin",
-    note: "Chewy oats, warm spice, lightly sweet.",
-    price: "$3.30",
-    tags: ["Chewy", "Cozy"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1600369672770-985fd30004eb?auto=format&fit=crop&w=1800&q=80",
-    href: "/menu",
-  },
-  {
-    name: "Salted Caramel",
-    note: "Caramel pockets with a little salt finish.",
-    price: "$3.90",
-    tags: ["Caramel", "Premium"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1800&q=80",
-    href: "/menu",
-  },
-];
+import { useCart } from "@/components/cart/CartProvider";
 
 export function CookiesShowcase() {
+  const { addItem } = useCart();
+
+  const [items, setItems] = useState<SupabaseProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await fetchProductsFromSupabase();
+        if (mounted) setItems(data.slice(0, 6));
+      } catch (e: any) {
+        if (mounted) setError(e?.message ?? "Failed to load cookies");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <section className="relative overflow-hidden py-16 md:py-20">
-      {/* ------------------------------ */}
-      {/* Warm bakery background (FULL)  */}
-      {/* ------------------------------ */}
+      {/* Warm bakery background */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10
@@ -128,66 +101,115 @@ export function CookiesShowcase() {
           </Link>
         </div>
 
+        {/* error */}
+        {error ? (
+          <div className="mt-10 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-black/70 backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:text-white/70">
+            {error}
+          </div>
+        ) : null}
+
         {/* grid */}
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {COOKIES.map((c) => (
-            <article
-              key={c.name}
-              className="group relative overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm transition
-                         hover:-translate-y-1 hover:shadow-lg
-                         dark:border-white/10 dark:bg-white/5"
-            >
-              {/* image */}
-              <div className="relative h-52 overflow-hidden">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
                 <div
-                  className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.05]"
-                  style={{ backgroundImage: `url(${c.imageUrl})` }}
+                  key={i}
+                  className="h-[360px] rounded-3xl border border-black/10 bg-white/70 shadow-sm backdrop-blur-md animate-pulse dark:border-white/10 dark:bg-white/5"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              ))
+            : items.map((p) => {
+                const cheapest = getCheapestVariant(p.product_variants);
+                if (!cheapest) return null;
 
-                {/* tags */}
-                <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                  {c.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
+                const imageUrl = getPrimaryImage(p.product_images);
+                const fromPrice = formatMoney(cheapest.price_cents);
 
-                {/* price pill */}
-                <div className="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                  {c.price}
-                </div>
-              </div>
-
-              {/* content */}
-              <div className="p-5">
-                <h3 className="text-lg font-semibold">{c.name}</h3>
-                <p className="mt-1 text-sm text-black/60 dark:text-white/70">
-                  {c.note}
-                </p>
-
-                <div className="mt-5 flex items-center justify-between">
-                  <Link
-                    href={c.href}
-                    className="text-sm font-medium text-black/80 hover:text-black dark:text-white/80 dark:hover:text-white"
+                return (
+                  <article
+                    key={p.id}
+                    className="group relative overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm transition
+                               hover:-translate-y-1 hover:shadow-lg
+                               dark:border-white/10 dark:bg-white/5"
                   >
-                    View details
-                  </Link>
+                    {/* image */}
+                    <div className="relative h-52 overflow-hidden">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.05]"
+                        style={{ backgroundImage: `url(${imageUrl})` }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-                  <Link
-                    href="/menu"
-                    className="rounded-md bg-lime-300 px-4 py-2 text-sm font-medium text-black transition hover:bg-lime-200"
-                  >
-                    Order
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
+                      {p.featured ? (
+                        <div className="absolute left-4 top-4 rounded-full bg-lime-300 px-3 py-1 text-xs font-semibold text-black">
+                          Featured
+                        </div>
+                      ) : null}
+
+                      <div className="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                        from {fromPrice}
+                      </div>
+                    </div>
+
+                    {/* content */}
+                    <div className="p-5">
+                      <h3 className="text-lg font-semibold">{p.name}</h3>
+                      <p className="mt-1 text-sm text-black/60 dark:text-white/70 line-clamp-2">
+                        {p.description ?? "Fresh baked goodness."}
+                      </p>
+
+                      <div className="mt-5 flex items-center justify-between gap-3">
+                        <Link
+                          href={`/menu/${p.slug}`}
+                          className="text-sm font-medium text-black/80 hover:text-black dark:text-white/80 dark:hover:text-white"
+                        >
+                          View details
+                        </Link>
+
+                        {/* ✅ Add to cart + Order now */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              addItem(
+                                {
+                                  variantId: cheapest.id,
+                                  productName: p.name,
+                                  productSlug: p.slug,
+                                  imageUrl,
+                                  unitPriceCents: cheapest.price_cents,
+                                },
+                                1
+                              );
+                            }}
+                            className="rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-black shadow-sm transition hover:bg-black/5
+                                       dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                          >
+                            Add to cart
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              addItem(
+                                {
+                                  variantId: cheapest.id,
+                                  productName: p.name,
+                                  productSlug: p.slug,
+                                  imageUrl,
+                                  unitPriceCents: cheapest.price_cents,
+                                },
+                                1
+                              );
+                              window.location.href = "/cart";
+                            }}
+                            className="rounded-md bg-lime-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-lime-200"
+                          >
+                            Order now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
         </div>
       </div>
     </section>
