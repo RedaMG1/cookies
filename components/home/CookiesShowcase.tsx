@@ -8,7 +8,7 @@ type CookieItem = {
   price: string;
   tags: string[];
   imageUrl: string;
-  href: string; // for now we can link to /menu (later: /menu/[slug])
+  href: string;
 };
 
 const COOKIES: CookieItem[] = [
@@ -71,22 +71,34 @@ const COOKIES: CookieItem[] = [
 export function CookiesShowcase() {
   return (
     <section className="relative overflow-hidden py-16 md:py-20">
-      {/* Full-width background to avoid “empty sides” feeling */}
+      {/* ------------------------------ */}
+      {/* Warm bakery background (FULL)  */}
+      {/* ------------------------------ */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10
-        bg-gradient-to-b from-white via-white to-black/[0.03]
-        dark:from-black dark:via-black dark:to-white/[0.04]"
-      />
-
-      {/* subtle blobs */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-56 top-10 -z-10 h-[440px] w-[440px] rounded-full bg-lime-300/10 blur-3xl"
+        bg-[radial-gradient(1200px_520px_at_18%_-10%,rgba(255,215,140,0.60),transparent_60%)]
+        dark:bg-[radial-gradient(1200px_520px_at_18%_-10%,rgba(255,215,140,0.20),transparent_60%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-56 bottom-10 -z-10 h-[440px] w-[440px] rounded-full bg-amber-300/10 blur-3xl"
+        className="absolute inset-0 -z-10
+        bg-gradient-to-b from-[#FFF7E6] via-[#FFF1D2] to-[#FFFFFF]
+        dark:from-[#0B0B0B] dark:via-[#0B0B0B] dark:to-[#0B0B0B]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-56 top-10 -z-10 h-[520px] w-[520px] rounded-full bg-amber-400/25 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-56 bottom-8 -z-10 h-[520px] w-[520px] rounded-full bg-orange-400/20 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 opacity-[0.06]
+        [background-image:radial-gradient(#000_1px,transparent_0)]
+        [background-size:22px_22px]"
       />
 
       <div className="mx-auto max-w-screen-2xl px-6">

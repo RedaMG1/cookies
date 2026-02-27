@@ -74,34 +74,47 @@ export function TopSellers() {
 
   return (
     <section className="relative overflow-hidden py-16 md:py-20">
-      {/* Full-width background (kills the “empty side” feeling) */}
+      {/* ------------------------------ */}
+      {/* Warm bakery background (FULL)  */}
+      {/* ------------------------------ */}
+
+      {/* Warm glow from top-left */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10
-        bg-gradient-to-b from-black/[0.03] via-white to-white
-        dark:from-white/[0.06] dark:via-black dark:to-black"
+        bg-[radial-gradient(1200px_520px_at_18%_-10%,rgba(255,215,140,0.60),transparent_60%)]
+        dark:bg-[radial-gradient(1200px_520px_at_18%_-10%,rgba(255,215,140,0.20),transparent_60%)]"
       />
 
-      {/* Premium “glow blobs” in the gutters */}
+      {/* Cream base */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-48 top-16 -z-10 h-[420px] w-[420px] rounded-full bg-lime-300/15 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-48 bottom-10 -z-10 h-[420px] w-[420px] rounded-full bg-amber-300/15 blur-3xl"
+        className="absolute inset-0 -z-10
+        bg-gradient-to-b from-[#FFF7E6] via-[#FFF1D2] to-[#FFFFFF]
+        dark:from-[#0B0B0B] dark:via-[#0B0B0B] dark:to-[#0B0B0B]"
       />
 
-      {/* Subtle dot pattern across FULL width */}
+      {/* Cookie “crumb” glows in gutters */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 opacity-35 dark:opacity-25
-        bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.10)_1px,transparent_0)]
-        dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.16)_1px,transparent_0)]
-        [background-size:18px_18px]"
+        className="pointer-events-none absolute -left-56 top-10 -z-10 h-[520px] w-[520px] rounded-full bg-amber-400/25 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-56 bottom-8 -z-10 h-[520px] w-[520px] rounded-full bg-orange-400/20 blur-3xl"
       />
 
-      {/* ✅ Wider container so content uses more screen */}
+      {/* Subtle grain (warm texture) */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 opacity-[0.06]
+        [background-image:radial-gradient(#000_1px,transparent_0)]
+        [background-size:22px_22px]"
+      />
+
+      {/* ------------------------------ */}
+      {/* Content                        */}
+      {/* ------------------------------ */}
       <div className="mx-auto max-w-screen-2xl px-6">
         {/* heading row */}
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
