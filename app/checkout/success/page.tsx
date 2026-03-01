@@ -1,6 +1,3 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 "use client";
 
 import Link from "next/link";
@@ -42,7 +39,10 @@ export default function SuccessPage() {
   const orderIdFromStorage =
     typeof window !== "undefined" ? localStorage.getItem("last_order_id") ?? "" : "";
 
-  const orderId = useMemo(() => orderIdFromUrl || orderIdFromStorage, [orderIdFromUrl, orderIdFromStorage]);
+  const orderId = useMemo(
+    () => orderIdFromUrl || orderIdFromStorage,
+    [orderIdFromUrl, orderIdFromStorage]
+  );
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,21 +58,18 @@ export default function SuccessPage() {
         setLoading(true);
         setError(null);
 
-        if (!orderId) {
-          throw new Error("Missing order id in URL.");
-        }
+        if (!orderId) throw new Error("Missing order id in URL.");
 
-        // ✅ Fetch from your own API route (server-side supabase uses service role)
         const res = await fetch(`/api/order?order=${encodeURIComponent(orderId)}`);
         const json = await res.json();
 
         if (!res.ok) throw new Error(json?.error ?? "Failed to load order");
 
         if (!mounted) return;
+
         setOrder(json.order ?? null);
         setItems(json.items ?? []);
 
-        // keep for later refresh fallback
         localStorage.setItem("last_order_id", orderId);
       } catch (e: any) {
         if (!mounted) return;
@@ -127,7 +124,6 @@ export default function SuccessPage() {
               <p className="mt-6 text-sm text-muted-foreground">No order found.</p>
             ) : (
               <>
-                {/* top cards */}
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-2xl border border-border bg-background/60 p-5">
                     <div className="text-xs text-muted-foreground">Order number</div>
@@ -150,10 +146,8 @@ export default function SuccessPage() {
                   </div>
                 </div>
 
-                {/* items */}
                 <div className="mt-8">
                   <h2 className="text-lg font-semibold">Items</h2>
-
                   <div className="mt-4 grid gap-3">
                     {items.length ? (
                       items.map((it) => {
@@ -185,23 +179,6 @@ export default function SuccessPage() {
                   </div>
                 </div>
 
-                {/* delivery info from notes (simple parsing) */}
-                <div className="mt-8">
-                  <h2 className="text-lg font-semibold">Delivery info</h2>
-                  <div className="mt-4 rounded-2xl border border-border bg-background/60 p-5 text-sm">
-                    {order.phone ? (
-                      <p>
-                        <span className="text-muted-foreground">Phone:</span>{" "}
-                        <span className="font-medium">{order.phone}</span>
-                      </p>
-                    ) : null}
-                    <div className="mt-2 whitespace-pre-line text-muted-foreground">
-                      {order.notes ?? "—"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* actions */}
                 <div className="mt-10 flex flex-wrap gap-3">
                   <Link
                     href="/"
