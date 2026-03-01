@@ -63,11 +63,11 @@ export default function CheckoutPage() {
 
       setUserId(u?.id ?? null);
 
-      // ✅ TS-safe (u.email is string inside this if)
-      if (u?.email) {
-        setAuthEmail(u.email);
-        setEmail((prev) => prev || u.email);
-      }
+      const emailFromAuth = u?.email ?? "";
+if (emailFromAuth) {
+  setAuthEmail(emailFromAuth);
+  setEmail((prev) => (prev ? prev : emailFromAuth));
+}
 
       // If logged in, load addresses
       if (u?.id) {
