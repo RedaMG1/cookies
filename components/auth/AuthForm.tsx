@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
@@ -13,6 +13,15 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // ✅ store next safely (client-only)
+  const [nextUrl, setNextUrl] = useState("/");
+
+  useEffect(() => {
+    // runs only in browser
+    const next = new URLSearchParams(window.location.search).get("next");
+    setNextUrl(next || "/");
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,8 +35,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           password,
         });
         if (error) throw error;
-        setMessage("Logged in ✅");
-        window.location.href = "/";
+
+        // optional: clear guest cart
+        localStorage.removeItem("cookie_shop_cart_v2");
+
+        window.location.href = nextUrl;
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -35,12 +47,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         });
         if (error) throw error;
 
-        // Depending on your Supabase email confirmation settings,
-        // the user might need to confirm via email.
-        setMessage(
-          "Account created ✅ If email confirmation is enabled, check your inbox."
-        );
-        window.location.href = "/";
+        localStorage.removeItem("cookie_shop_cart_v2");
+
+        window.location.href = nextUrl;
       }
     } catch (err: any) {
       setMessage(err?.message ?? "Something went wrong");
@@ -90,16 +99,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           disabled={loading}
           className="w-full rounded-xl bg-lime-300 px-4 py-3 text-sm font-semibold text-black transition hover:bg-lime-200 disabled:opacity-60"
         >
-          {loading
-            ? "Please wait…"
-            : mode === "login"
-            ? "Login"
-            : "Sign up"}
+          {loading ? "Please wait…" : mode === "login" ? "Login" : "Sign up"}
         </button>
 
-        {message ? (
-          <p className="text-sm text-muted-foreground">{message}</p>
-        ) : null}
+        {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
 
         <p className="text-sm text-muted-foreground">
           {mode === "login" ? (

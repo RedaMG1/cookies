@@ -154,10 +154,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       await replaceCartItems(cid, payload);
 
-      // Mark merged so refresh doesn't duplicate
-      localStorage.setItem(mergeKey, "1");
+// Mark merged so refresh doesn't duplicate
+localStorage.setItem(mergeKey, "1");
 
-      if (!cancelled) setItems(merged);
+// ✅ clear guest/local cart after merge (session cart)
+localStorage.removeItem(STORAGE_KEY);
+
+if (!cancelled) setItems(merged);
     })().catch(console.error);
 
     return () => {
