@@ -1,91 +1,110 @@
-"use client";
+// app/checkout/success/page.tsx
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const runtime = "nodejs";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 
 function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-type OrderRow = {
-  id: string;
-  order_no: number | null;
-  status: string | null;
-  email: string | null;
-  phone: string | null;
-  notes: string | null;
-  subtotal_cents: number | null;
-  tax_cents: number | null;
-  shipping_cents: number | null;
-  discount_cents: number | null;
-  total_cents: number | null;
-  created_at: string | null;
+type PageProps = {
+  searchParams: Promise<{
+    order?: string;
+    session_id?: string;
+  }>;
 };
 
-type OrderItemRow = {
-  id: string;
-  product_name: string | null;
-  variant_name: string | null;
-  quantity: number | null;
-  unit_price_cents: number | null;
-};
+export default async function SuccessPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
 
-export default function SuccessPage() {
-  const searchParams = useSearchParams();
+  const orderId = sp.order ?? "";
 
-  const orderIdFromUrl = searchParams.get("order") ?? "";
-  const orderIdFromStorage =
-    typeof window !== "undefined" ? localStorage.getItem("last_order_id") ?? "" : "";
+  if (!orderId) {
+    return (
+      <main className="relative overflow-hidden">
+        <div className="mx-auto max-w-3xl px-6 py-16">
+          <div className="rounded-3xl border border-border bg-card/90 backdrop-blur p-10">
+            <h1 className="text-3xl font-semibold">Payment successful ✅</h1>
+            <p className="mt-2 text-sm text-red-600">Missing order id in URL.</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              URL example: <span className="font-mono">/checkout/success?order=YOUR_ORDER_ID</span>
+            </p>
 
-  const orderId = useMemo(
-    () => orderIdFromUrl || orderIdFromStorage,
-    [orderIdFromUrl, orderIdFromStorage]
-  );
+            <Link href="/" className="mt-6 inline-block underline">
+              Back home
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const SUPABASE_URL = process.env.SUPABASE_URL!;
+  const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  const [order, setOrder] = useState<OrderRow | null>(null);
-  const [items, setItems] = useState<OrderItemRow[]>([]);
+  // ⚠️ Server-only client (service role). Never use this in client components.
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { persistSession: false },
+  });
 
-  useEffect(() => {
-    let mounted = true;
+  // 1) Load order
+  const { data: order, error: orderErr } = await admin
+    .from("orders")
+    .select(
+      "id, order_no, status, email, phone, notes, subtotal_cents, tax_cents, shipping_cents, discount_cents, total_cents, created_at"
+    )
+    .eq("id", orderId)
+    .maybeSingle();
 
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
+  if (orderErr) {
+    return (
+      <main className="relative overflow-hidden">
+        <div className="mx-auto max-w-3xl px-6 py-16">
+          <div className="rounded-3xl border border-border bg-card/90 backdrop-blur p-10">
+            <h1 className="text-3xl font-semibold">Payment successful ✅</h1>
+            <p className="mt-3 text-sm text-red-600">{orderErr.message}</p>
 
-        if (!orderId) throw new Error("Missing order id in URL.");
+            <Link href="/" className="mt-6 inline-block underline">
+              Back home
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-        const res = await fetch(`/api/order?order=${encodeURIComponent(orderId)}`);
-        const json = await res.json();
+  if (!order) {
+    return (
+      <main className="relative overflow-hidden">
+        <div className="mx-auto max-w-3xl px-6 py-16">
+          <div className="rounded-3xl border border-border bg-card/90 backdrop-blur p-10">
+            <h1 className="text-3xl font-semibold">Payment successful ✅</h1>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Order not found (id: <span className="font-mono">{orderId}</span>)
+            </p>
 
-        if (!res.ok) throw new Error(json?.error ?? "Failed to load order");
+            <Link href="/" className="mt-6 inline-block underline">
+              Back home
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-        if (!mounted) return;
+  // 2) Load items for this order
+  const { data: items, error: itemsErr } = await admin
+    .from("order_items")
+    .select("id, product_name, variant_name, quantity, unit_price_cents")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: true });
 
-        setOrder(json.order ?? null);
-        setItems(json.items ?? []);
+  const safeItems = items ?? [];
 
-        localStorage.setItem("last_order_id", orderId);
-      } catch (e: any) {
-        if (!mounted) return;
-        setError(e?.message ?? "Failed to load order");
-      } finally {
-        if (!mounted) return;
-        setLoading(false);
-      }
-    }
-
-    load();
-
-    return () => {
-      mounted = false;
-    };
-  }, [orderId]);
+  const totalCents = Number(order.total_cents ?? order.subtotal_cents ?? 0);
 
   return (
     <main className="relative overflow-hidden">
@@ -103,102 +122,105 @@ export default function SuccessPage() {
         <div className="mx-auto max-w-3xl">
           <div className="rounded-3xl border border-border bg-card/90 backdrop-blur p-10">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight">Order confirmed</h1>
-              <CheckCircle2 className="h-8 w-8 text-lime-500" />
+              <h1 className="text-3xl font-semibold tracking-tight">Order confirmed ✅</h1>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               Your order has been created successfully.
             </p>
 
-            {loading ? (
-              <p className="mt-6 text-sm text-muted-foreground">Loading your order…</p>
-            ) : error ? (
-              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {error}
-                <div className="mt-2 text-xs text-red-600">
-                  Debug: url order = {orderIdFromUrl || "null"} | localStorage last_order_id ={" "}
-                  {orderIdFromStorage || "null"}
+            {/* summary cards */}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-background/60 p-5">
+                <div className="text-xs text-muted-foreground">Order number</div>
+                <div className="mt-1 text-xl font-semibold">#{order.order_no ?? "—"}</div>
+
+                <div className="mt-4 text-xs text-muted-foreground">Status</div>
+                <div className="mt-1 inline-flex rounded-full bg-black/5 px-3 py-1 text-sm font-medium">
+                  {order.status ?? "—"}
+                </div>
+
+                <div className="mt-4 text-xs text-muted-foreground">Order ID</div>
+                <div className="mt-1 break-all font-mono text-xs">{order.id}</div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-background/60 p-5">
+                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="mt-1 text-xl font-semibold">{formatMoney(totalCents)}</div>
+
+                <div className="mt-4 text-xs text-muted-foreground">Email</div>
+                <div className="mt-1 text-sm font-medium">{order.email ?? "—"}</div>
+
+                <div className="mt-4 text-xs text-muted-foreground">Phone</div>
+                <div className="mt-1 text-sm font-medium">{order.phone ?? "—"}</div>
+              </div>
+            </div>
+
+            {/* items */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold">Items</h2>
+
+              {itemsErr ? (
+                <p className="mt-3 text-sm text-red-600">{itemsErr.message}</p>
+              ) : safeItems.length ? (
+                <div className="mt-4 grid gap-3">
+                  {safeItems.map((it) => {
+                    const qty = Number(it.quantity ?? 1);
+                    const unit = Number(it.unit_price_cents ?? 0);
+                    return (
+                      <div
+                        key={it.id}
+                        className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/60 p-4"
+                      >
+                        <div>
+                          <div className="font-semibold">
+                            {it.product_name ?? "Item"}
+                            {it.variant_name ? (
+                              <span className="text-muted-foreground"> — {it.variant_name}</span>
+                            ) : null}
+                          </div>
+                          <div className="mt-1 text-sm text-muted-foreground">
+                            {formatMoney(unit)} × {qty}
+                          </div>
+                        </div>
+                        <div className="font-semibold">{formatMoney(unit * qty)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">No items found for this order.</p>
+              )}
+            </div>
+
+            {/* notes */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold">Delivery / notes</h2>
+              <div className="mt-4 rounded-2xl border border-border bg-background/60 p-5 text-sm">
+                <div className="whitespace-pre-line text-muted-foreground">
+                  {order.notes ?? "—"}
                 </div>
               </div>
-            ) : !order ? (
-              <p className="mt-6 text-sm text-muted-foreground">No order found.</p>
-            ) : (
-              <>
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-border bg-background/60 p-5">
-                    <div className="text-xs text-muted-foreground">Order number</div>
-                    <div className="mt-1 text-xl font-semibold">#{order.order_no ?? "—"}</div>
+            </div>
 
-                    <div className="mt-4 text-xs text-muted-foreground">Status</div>
-                    <div className="mt-1 inline-flex rounded-full bg-black/5 px-3 py-1 text-sm font-medium">
-                      {order.status ?? "—"}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border bg-background/60 p-5">
-                    <div className="text-xs text-muted-foreground">Total</div>
-                    <div className="mt-1 text-xl font-semibold">
-                      {formatMoney(order.total_cents ?? order.subtotal_cents ?? 0)}
-                    </div>
-
-                    <div className="mt-4 text-xs text-muted-foreground">Email</div>
-                    <div className="mt-1 text-sm font-medium">{order.email ?? "—"}</div>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <h2 className="text-lg font-semibold">Items</h2>
-                  <div className="mt-4 grid gap-3">
-                    {items.length ? (
-                      items.map((it) => {
-                        const qty = it.quantity ?? 1;
-                        const unit = it.unit_price_cents ?? 0;
-                        return (
-                          <div
-                            key={it.id}
-                            className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/60 p-4"
-                          >
-                            <div>
-                              <div className="font-semibold">
-                                {it.product_name ?? "Item"}
-                                {it.variant_name ? (
-                                  <span className="text-muted-foreground"> — {it.variant_name}</span>
-                                ) : null}
-                              </div>
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                {formatMoney(unit)} × {qty}
-                              </div>
-                            </div>
-                            <div className="font-semibold">{formatMoney(unit * qty)}</div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No items found.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-10 flex flex-wrap gap-3">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center justify-center rounded-md bg-lime-300 px-4 py-2 text-sm font-semibold text-black hover:bg-lime-200 transition"
-                  >
-                    Back home
-                  </Link>
-                  <Link
-                    href="/menu"
-                    className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-accent transition"
-                  >
-                    Order more
-                  </Link>
-                </div>
-              </>
-            )}
+            {/* actions */}
+            <div className="mt-10 flex flex-wrap gap-3">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center rounded-md bg-lime-300 px-4 py-2 text-sm font-semibold text-black hover:bg-lime-200 transition"
+              >
+                Back home
+              </Link>
+              <Link
+                href="/menu"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-accent transition"
+              >
+                Order more
+              </Link>
+            </div>
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Tip: You can bookmark this page. The order id is in the URL.
+            Tip: bookmark this page. Your order id is in the URL.
           </p>
         </div>
       </div>
