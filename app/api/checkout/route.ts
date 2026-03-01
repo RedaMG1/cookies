@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseAdminServer } from "@/lib/supabase/admin-server";
 
 type Body = {
   userId: string | null;
-  selectedAddressId: string | null;
+  selectedAddressId: string | null; // if user selected saved address
   customer: {
     fullName: string;
     email: string;
@@ -30,17 +30,24 @@ export async function POST(req: Request) {
     }
 
     const { customer, address } = body;
+
     if (!customer?.fullName || !customer?.email || !customer?.phone) {
       return NextResponse.json({ error: "Missing customer data" }, { status: 400 });
     }
-    if (!address?.line1 || !address?.city || !address?.postalCode || !address?.country) {
-      return NextResponse.json({ error: "Missing address data" }, { status: 400 });
+
+    // If user selected a saved address, we will use it even if address fields are not filled.
+    const usingSavedAddress = Boolean(body.userId && body.selectedAddressId);
+
+    if (!usingSavedAddress) {
+      if (!address?.line1 || !address?.city || !address?.postalCode || !address?.country) {
+        return NextResponse.json({ error: "Missing address data" }, { status: 400 });
+      }
     }
 
     // 1) Load variants (trusted prices)
     const variantIds = body.items.map((i) => i.variantId);
 
-    const { data: variants, error: vErr } = await supabaseAdmin
+    const { data: variants, error: vErr } = await supabaseAdminServer
       .from("product_variants")
       .select(
         `
@@ -82,15 +89,17 @@ export async function POST(req: Request) {
     const discount = 0;
     const total = subtotal + tax + shipping - discount;
 
-    // 2) Save / use delivery address id for logged-in users
+    // 2) Determine delivery_address_id for logged in users
+    // Your addresses schema:
+    // id, user_id, name, line1, line2, city, region (we store postalCode in region)
     let delivery_address_id: string | null = null;
 
     if (body.userId) {
       if (body.selectedAddressId) {
         delivery_address_id = body.selectedAddressId;
       } else {
-        // Insert address using your real columns:
-        const { data: addrRow, error: addrErr } = await supabaseAdmin
+        // save a new address for future orders
+        const { data: addrRow, error: addrErr } = await supabaseAdminServer
           .from("addresses")
           .insert({
             user_id: body.userId,
@@ -98,7 +107,7 @@ export async function POST(req: Request) {
             line1: address.line1,
             line2: address.line2,
             city: address.city,
-            region: address.postalCode, // ✅ store postalCode here (your schema)
+            region: address.postalCode,
           })
           .select("id")
           .single();
@@ -108,9 +117,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const addressText = `${address.line1}${address.line2 ? `, ${address.line2}` : ""}, ${
-      address.postalCode
-    } ${address.city}, ${address.country}`;
+    // 3) Human-readable notes (optional)
+    const addressText = usingSavedAddress
+      ? "Saved address selected"
+      : `${address.line1}${address.line2 ? `, ${address.line2}` : ""}, ${address.postalCode} ${address.city}, ${address.country}`;
 
     const combinedNotes =
       `Customer: ${customer.fullName}\n` +
@@ -118,11 +128,11 @@ export async function POST(req: Request) {
       `Address: ${addressText}\n` +
       (customer.note ? `Note: ${customer.note}` : "");
 
-    // 3) Create order
-    const { data: order, error: oErr } = await supabaseAdmin
+    // 4) Create order
+    const { data: order, error: oErr } = await supabaseAdminServer
       .from("orders")
       .insert({
-        user_id: body.userId,
+        user_id: body.userId, // must be nullable in DB for guest
         email: customer.email,
         phone: customer.phone,
         status: "pending_payment",
@@ -141,8 +151,8 @@ export async function POST(req: Request) {
 
     if (oErr) throw new Error(oErr.message);
 
-    // 4) Insert order items
-    const { error: oiErr } = await supabaseAdmin.from("order_items").insert(
+    // 5) Insert order items
+    const { error: oiErr } = await supabaseAdminServer.from("order_items").insert(
       orderItems.map((it) => ({
         order_id: order.id,
         ...it,
@@ -150,7 +160,7 @@ export async function POST(req: Request) {
     );
     if (oiErr) throw new Error(oiErr.message);
 
-    // 5) Stripe session
+    // 6) Stripe session
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     const session = await stripe.checkout.sessions.create({
@@ -169,8 +179,8 @@ export async function POST(req: Request) {
       })),
     });
 
-    // 6) Payment row
-    const { error: payErr } = await supabaseAdmin.from("payments").insert({
+    // 7) Payment row
+    const { error: payErr } = await supabaseAdminServer.from("payments").insert({
       order_id: order.id,
       stripe_checkout_session_id: session.id,
       status: "processing",
